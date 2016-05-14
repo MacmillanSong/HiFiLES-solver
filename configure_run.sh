@@ -55,7 +55,6 @@ PARMETIS_INCLUDE="/usr/local/include"   # location of parmetis.h
 
 METIS_LIB="/usr/local/lib"              # location of libmetis.a
 METIS_INCLUDE="/usr/local/include"      # location of metis.h
-
 # GPU Architechture Selection: -gencode=arch=compute_xx,code=sm_xx (default: 20)
 #   compute_10	 Basic features
 #   compute_11	 + atomic memory operations on global memory
