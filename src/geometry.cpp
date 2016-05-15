@@ -104,6 +104,14 @@ void SetInput(struct solution* FlowSol) {
   else if (FlowSol->rank==2) { cudaSetDevice(3); }
 #endif
 
+#ifndef _ENRICO
+#ifndef _YOSEMITESAM
+  // NOTE: depening on system arcihtecture, this may not be the GPU device you want
+  // i.e. one of the devices may be a (non-scientific-computing) graphics card
+  cudaSetDevice(FlowSol->rank);
+#endif
+#endif
+
 #endif
 
 #endif
@@ -114,21 +122,23 @@ int get_bc_number(string& bcname) {
 
   int bcflag;
 
-  if (!bcname.compare("Sub_In_Simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
-  else if (!bcname.compare("Sub_Out_Simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
-  else if (!bcname.compare("Sub_In_Char")) bcflag = 3;    // Subsonic inflow characteristic //
-  else if (!bcname.compare("Sub_Out_Char")) bcflag = 4;   // Subsonic outflow characteristic //
-  else if (!bcname.compare("Sup_In")) bcflag = 5;         // Supersonic inflow //
-  else if (!bcname.compare("Sup_Out")) bcflag = 6;        // Supersonic outflow //
-  else if (!bcname.compare("Slip_Wall")) bcflag = 7;      // Slip wall //
-  else if (!bcname.compare("Cyclic")) bcflag = 9;
-  else if (!bcname.compare("Isotherm_Fix")) bcflag = 11;  // Isothermal, no-slip wall //
-  else if (!bcname.compare("Adiabat_Fix")) bcflag = 12;   // Adiabatic, no-slip wall //
-  else if (!bcname.compare("Isotherm_Move")) bcflag = 13; // Isothermal, no-slip moving wall //
-  else if (!bcname.compare("Adiabat_Move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
-  else if (!bcname.compare("Char")) bcflag = 15;          // Characteristic //
-  else if (!bcname.compare("Slip_Wall_Dual")) bcflag = 16;// Dual consistent BC //
-  else if (!bcname.compare("AD_Wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
+  std::transform(bcname.begin(), bcname.end(), bcname.begin(), ::tolower);
+
+  if (!bcname.compare("sub_in_simp")) bcflag = 1;         // Subsonic inflow simple (free pressure) //
+  else if (!bcname.compare("sub_out_simp")) bcflag = 2;   // Subsonic outflow simple (fixed pressure) //
+  else if (!bcname.compare("sub_in_char")) bcflag = 3;    // Subsonic inflow characteristic //
+  else if (!bcname.compare("sub_out_char")) bcflag = 4;   // Subsonic outflow characteristic //
+  else if (!bcname.compare("sup_in")) bcflag = 5;         // Supersonic inflow //
+  else if (!bcname.compare("sup_out")) bcflag = 6;        // Supersonic outflow //
+  else if (!bcname.compare("slip_wall")) bcflag = 7;      // Slip wall //
+  else if (!bcname.compare("cyclic")) bcflag = 9;
+  else if (!bcname.compare("isotherm_fix")) bcflag = 11;  // Isothermal, no-slip wall //
+  else if (!bcname.compare("adiabat_fix")) bcflag = 12;   // Adiabatic, no-slip wall //
+  else if (!bcname.compare("isotherm_move")) bcflag = 13; // Isothermal, no-slip moving wall //
+  else if (!bcname.compare("adiabat_move")) bcflag = 14;  // Adiabatic, no-slip moving wall //
+  else if (!bcname.compare("char")) bcflag = 15;          // Characteristic //
+  else if (!bcname.compare("slip_wall_dual")) bcflag = 16;// Dual consistent BC //
+  else if (!bcname.compare("ad_wall")) bcflag = 50;       // Advection, Advection-Diffusion Boundary Conditions //
   else
   {
     cout << "Boundary = " << bcname << endl;
@@ -409,8 +419,6 @@ void GeoPreprocess(struct solution* FlowSol, mesh &Mesh) {
       FlowSol->mesh_eles(i)->store_nodal_s_basis_ppts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_fpts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_upts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_fpts();
-      FlowSol->mesh_eles(i)->store_dd_nodal_s_basis_upts();
       FlowSol->mesh_eles(i)->store_nodal_s_basis_inters_cubpts();
       FlowSol->mesh_eles(i)->store_d_nodal_s_basis_inters_cubpts();
     }
@@ -1146,7 +1154,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
                   >> n_mats         // num material groups
                   >> n_bcs          // num boundary groups
                   >> dummy;         // num space dimensions
-  cout << "Gambit mesh specs from header: " << ", " << n_verts_global << ", " << n_cells_global << ", " << n_mats << ", " << n_bcs << ", " << dummy << endl;
+  //cout << "Gambit mesh specs from header: " << ", " << n_verts_global << ", " << n_cells_global << ", " << n_mats << ", " << n_bcs << ", " << dummy << endl;
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   mesh_file.getline(buf,BUFSIZ);  // Skip 2 lines
   mesh_file.getline(buf,BUFSIZ);
@@ -1180,11 +1188,12 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   for (int i=0;i<n_mats;i++)
     {
       mesh_file.getline(buf,BUFSIZ); // Read GROUP: 1 ELEMENTS
-      cout << buf << endl;
       int nread = sscanf(buf,"%*s%d%*s%d%*s%d",&dummy,&gnel,&dummy2);
-      if (3!=nread) {cout << "ERROR while reading Gambit file" << endl; cout << "nread =" << nread << endl; exit(1); }
+      if (3!=nread) {
+          cout << "ERROR while reading Gambit file" << endl;
+          cout << "nread =" << nread << endl; exit(1);
+        }
       mesh_file.getline(buf,BUFSIZ); // Read group name
-      cout << buf << endl;
       mesh_file.getline(buf,BUFSIZ); // Skip solver dependant flag
       for (int k=0;k<gnel;k++) mesh_file >> dummy;
       mesh_file.getline(buf,BUFSIZ); // Clear end of line
@@ -1196,7 +1205,7 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
   // Read the boundary regions
   // --------------------------------
 
-  int bcNF, bcID, bcflag,icg,k, real_k, index;
+  int bcNF, bcID, bcflag,icg,k, real_face;
   string bcname;
   char bcTXT[100];
 
@@ -1228,47 +1237,47 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
       icg--;  // 1-indexed -> 0-indexed
       // Matching Gambit faces with face convention in code
       if (eleType==2 || eleType==3)
-        real_k = k-1;
+        real_face = k-1;
       // Hex
       else if (eleType==4)
       {
         if (k==1)
-          real_k = 0;
+          real_face = 0;
         else if (k==2)
-          real_k = 3;
+          real_face = 3;
         else if (k==3)
-          real_k = 5;
+          real_face = 5;
         else if (k==4)
-          real_k = 1;
+          real_face = 1;
         else if (k==5)
-          real_k = 4;
+          real_face = 4;
         else if (k==6)
-          real_k = 2;
+          real_face = 2;
       }
       // Tet
       else if (eleType==6)
       {
         if (k==1)
-          real_k = 3;
+          real_face = 3;
         else if (k==2)
-          real_k = 2;
+          real_face = 2;
         else if (k==3)
-          real_k = 0;
+          real_face = 0;
         else if (k==4)
-          real_k = 1;
+          real_face = 1;
       }
       else if (eleType==5)
       {
         if (k==1)
-          real_k = 2;
+          real_face = 2;
         else if (k==2)
-          real_k = 3;
+          real_face = 3;
         else if (k==3)
-          real_k = 4;
+          real_face = 4;
         else if (k==4)
-          real_k = 0;
+          real_face = 0;
         else if (k==5)
-          real_k = 1;
+          real_face = 1;
       }
       else
       {
@@ -1277,15 +1286,15 @@ void read_boundary_gambit(string& in_file_name, int &in_n_cells, array<int>& in_
       }
 
       // Check if cell icg belongs to processor
-      index = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
+      int cellID = index_locate_int(icg,cell_list.get_ptr_cpu(),in_n_cells);
 
       // If it does, find local cell ic corresponding to icg
-      if (index!=-1)
+      if (cellID!=-1)
       {
         bdy_count++;
-        out_bctype(index,real_k) = bcflag;
-        out_bccells(i)(bf) = index;
-        out_bcfaces(i)(bf) = real_k;
+        out_bctype(cellID,real_face) = bcflag;
+        out_bccells(i)(bf) = cellID;
+        out_bcfaces(i)(bf) = real_face;
       }
     }
 
@@ -1377,8 +1386,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
       bcflag = get_bc_number(bcname);
       out_bclist(i) = bcflag;
     }
-    if(FlowSol->rank==0)
-      cout << "\tout_bclist(" << i << ") = " << out_bclist(i) << ", " << bcname << endl;
   }
 
   //--- Find boundaries which are moving ---//
@@ -1435,13 +1442,17 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
         num_face_vert = 3;
         mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
       }
+      else if (elmtype == 9) // Quadratic Tri Face
+      {
+        num_face_vert = 3;
+        mesh_file >> vlist_bound(0) >> vlist_bound(1) >> vlist_bound(2);
+        mesh_file >> vlist_bound(3) >> vlist_bound(4) >> vlist_bound(5);
+      }
       else if (elmtype==10) // Quadratic quad face
       {
         num_face_vert = 9;
         mesh_file >> vlist_bound(0) >> vlist_bound(2) >> vlist_bound(8) >> vlist_bound(6);
         mesh_file >> vlist_bound(1) >> vlist_bound(5) >> vlist_bound(7) >> vlist_bound(3) >> vlist_bound(4);
-        cout << "vlist_bound: " << endl;
-        vlist_bound.print();
       }
       else 
       {
@@ -1483,25 +1494,16 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
               int ic=in_icvert(ind);
               for (int k=0;k<FlowSol->num_f_per_c(in_ctype(ic));k++)
                 {
-                  cout << "vlist_local: " << endl;
-                  vlist_local.print();
-
                   // Get local vertices of local face k of cell ic
                   get_vlist_loc_face(in_ctype(ic),in_c2n_v(ic),k,vlist_cell,num_v_per_f);
 
-                  cout << "num_face_vert: " << num_face_vert << endl;
-                  cout << "num_v_per_f: " << num_v_per_f << endl;
-
-                  if (num_v_per_f!= num_face_vert)
+                  if (num_v_per_f != num_face_vert)
                     continue;
 
                   for (int j=0;j<num_v_per_f;j++)
                   {
                     vlist_cell(j) = in_c2v(ic,vlist_cell(j));
                   }
-
-                  cout << "vlist_cell: " << endl;
-                  vlist_cell.print();
 
                   compare_faces_boundary(vlist_local,vlist_cell,num_v_per_f,found);
 
@@ -1516,8 +1518,6 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
             }
           if (found==0)
           {
-            cout << "num_v_per_face=" << num_v_per_f << endl;
-            cout << "vlist_bound(0)=" << vlist_bound(0) << " vlist_bound(1)=" << vlist_bound(1) << endl;
             cout << "vlist_bound(2)=" << vlist_bound(2) << " vlist_bound(3)=" << vlist_bound(3) << endl;
             FatalError("All nodes of boundary face belong to processor but could not find the coresponding faces");
           }
@@ -1538,7 +1538,7 @@ void read_boundary_gmsh(string& in_file_name, int &in_n_cells, array<int>& in_ic
 
   mesh_file.close();
 
-  cout << "  Number of Boundary Faces: " << bdy_count << endl;
+  //cout << "  Number of Boundary Faces: " << bdy_count << endl;
 }
 
 void read_vertices_gambit(string& in_file_name, int in_n_verts, int &out_n_verts_global, array<int> &in_iv2ivg, array<double> &out_xv, solution *FlowSol)
@@ -1663,8 +1663,6 @@ void create_iv2ivg(array<int> &inout_iv2ivg, array<int> &inout_c2v, int &out_n_v
           break;
         }
     }
-
-  cout << "vrtlist: " << in_n_cells << ", " << MAX_V_PER_C << ", " << sizeof(int) << ", " << sizeof(vrtlist) << endl;
 
   // Get rid of repeated digits
   temp(0) = vrtlist(staind);
@@ -1829,7 +1827,8 @@ void read_connectivity_gambit(string& in_file_name, int &out_n_cells, array<int>
             }
           else if (out_c2n_v(i)==10) // quadratic tet
             {
-              mesh_file >> out_c2v(i,0) >> out_c2v(i,4) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7) >> out_c2v(i,2) >> out_c2v(i,6) >> out_c2v(i,9) >> out_c2v(i,8) >> out_c2v(i,3);
+              mesh_file >> out_c2v(i,0) >> out_c2v(i,4) >> out_c2v(i,1) >> out_c2v(i,5) >> out_c2v(i,7);
+              mesh_file >> out_c2v(i,2) >> out_c2v(i,6) >> out_c2v(i,9) >> out_c2v(i,8) >> out_c2v(i,3);
             }
           else
             FatalError("tet element type not implemented");
@@ -1910,11 +1909,9 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
   for(int i=0;i<n_bnds;i++)
   {
-    cout << "bc "<< i << ": " << flush;
     mesh_file.getline(buf,BUFSIZ);
     sscanf(buf,"%d %d %s", &bcdim, &bcid, bc_txt_temp);
     strcpy(bcTXT[bcid],bc_txt_temp);
-    cout << bc_txt_temp << endl;
     if (strstr(bc_txt_temp,"FLUID")) {
       FlowSol->n_dims=bcdim;
     }
@@ -1943,16 +1940,12 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
   mesh_file >> n_entities;   // num cells in mesh
   mesh_file.getline(buf,BUFSIZ);  // clear rest of line
 
-  cout << "n_entities=" << n_entities << endl;
-
   int icount=0;
 
   for (int i=0;i<n_entities;i++)
   {
     mesh_file >> id >> elmtype >> ntags;
     mesh_file >> bcid;
-
-    cout << "id, elmtype, ntags, bcid =" << id << ", " << elmtype << ", " << ntags << ", " << bcid << endl;
 
     for (int tag=0; tag<ntags-1; tag++)
       mesh_file >> dummy;
@@ -1964,8 +1957,6 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
 
   }
   n_cells_global=icount;
-
-  cout << "n_cell_global=" << n_cells_global << endl;
 
   // Now assign kstart to each processor
   int kstart;
@@ -2077,8 +2068,10 @@ void read_connectivity_gmsh(string& in_file_name, int &out_n_cells, array<int> &
                 else if (elmtype==11) // Quadratic tet
                 {
                   out_c2n_v(i) = 10;                  
-                  mesh_file >> out_c2v(i,0) >> out_c2v(i,8) >> out_c2v(i,5) >> out_c2v(i,2) >> out_c2v(i,3);
-                  mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1); 
+                  //mesh_file >> out_c2v(i,0) >> out_c2v(i,8) >> out_c2v(i,5) >> out_c2v(i,2) >> out_c2v(i,3);
+                  //mesh_file >> out_c2v(i,6) >> out_c2v(i,7) >> out_c2v(i,4) >> out_c2v(i,9) >> out_c2v(i,1);
+                  mesh_file >> out_c2v(i,0) >> out_c2v(i,5) >> out_c2v(i,4) >> out_c2v(i,2) >> out_c2v(i,8);
+                  mesh_file >> out_c2v(i,1) >> out_c2v(i,7) >> out_c2v(i,3) >> out_c2v(i,9) >> out_c2v(i,6);
                 }
               }
               else if (elmtype==5 || elmtype==12) // Hexahedron
@@ -2435,8 +2428,6 @@ void CompConnectivity(array<int>& in_c2v, array<int>& in_c2n_v, array<int>& in_c
 
   n_cells = in_c2v.get_dim(0);
   n_verts = in_c2v.get_max()+1;
-
-  //cout << "n_verts=" << n_verts << endl;
 
   //array<int> num_v_per_c(5); // for 5 element types
   array<int> vlist_loc(MAX_V_PER_F),vlist_loc2(MAX_V_PER_F),vlist_glob(MAX_V_PER_F),vlist_glob2(MAX_V_PER_F); // faces cannot have more than 4 vertices
@@ -2831,38 +2822,74 @@ void get_vlist_loc_edge(int& in_ctype, int& in_n_spts, int& in_edge, array<int>&
       FatalError("2D elements not supported in get_vlist_loc_edge");
     }
   else if (in_ctype==2) // Tet
+  {
+    if (in_n_spts == 4) // Linear Tet
     {
       if(in_edge==0)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 1;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 1;
+      }
       else if(in_edge==1)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 2;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 2;
+      }
       else if(in_edge==2)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+      }
       else if(in_edge==3)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 3;
+      }
       else if(in_edge==4)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 2;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 2;
+      }
       else if(in_edge==5)
-        {
-          out_vlist_loc(0) = 2;
-          out_vlist_loc(1) = 3;
-        }
+      {
+        out_vlist_loc(0) = 2;
+        out_vlist_loc(1) = 3;
+      }
     }
+    else if (in_n_spts == 10)
+    {
+      if(in_edge==0)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 5;
+      }
+      else if(in_edge==1)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+      }
+      else if(in_edge==2)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 7;
+      }
+      else if(in_edge==3)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 7;
+      }
+      else if(in_edge==4)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 3;
+      }
+      else if(in_edge==5)
+      {
+        out_vlist_loc(0) = 3;
+        out_vlist_loc(1) = 7;
+      }
+    }
+  }
   else if (in_ctype==3) // Prism
     {
       if(in_edge==0)
@@ -3127,34 +3154,64 @@ void get_vlist_loc_face(int& in_ctype, int& in_n_spts, int& in_face, array<int>&
         }
     }
   else if (in_ctype==2) // Tet
+  {
+    num_v_per_f = 3;
+    if (in_n_spts == 4) // Linear Tet
     {
-      num_v_per_f = 3;
       if(in_face==0)
-        {
-          out_vlist_loc(0) = 1;
-          out_vlist_loc(1) = 2;
-          out_vlist_loc(2) = 3;
-        }
+      {
+        out_vlist_loc(0) = 1;
+        out_vlist_loc(1) = 2;
+        out_vlist_loc(2) = 3;
+      }
       else if(in_face==1)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 3;
-          out_vlist_loc(2) = 2;
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 2;
 
-        }
+      }
       else if(in_face==2)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 1;
-          out_vlist_loc(2) = 3;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 1;
+        out_vlist_loc(2) = 3;
+      }
       else if(in_face==3)
-        {
-          out_vlist_loc(0) = 0;
-          out_vlist_loc(1) = 2;
-          out_vlist_loc(2) = 1;
-        }
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 2;
+        out_vlist_loc(2) = 1;
+      }
     }
+    else if (in_n_spts == 10)  // Quadratic Tet
+    {
+      if(in_face==0)
+      {
+        out_vlist_loc(0) = 5;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 7;
+      }
+      else if(in_face==1)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 7;
+        out_vlist_loc(2) = 3;
+      }
+      else if(in_face==2)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 5;
+        out_vlist_loc(2) = 7;
+      }
+      else if(in_face==3)
+      {
+        out_vlist_loc(0) = 0;
+        out_vlist_loc(1) = 3;
+        out_vlist_loc(2) = 5;
+      }
+    }
+  }
   else if (in_ctype==3) // Prism
     {
       if(in_face==0)

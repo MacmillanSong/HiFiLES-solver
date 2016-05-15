@@ -68,6 +68,9 @@ public:
   /** peform prescribed mesh motion using rigid translation/rotation */
   void rigid_move(solution *FlowSol);
 
+  /*blending mesh*/
+  void blend_move(solution *FlowSol);
+
   /** Perturb the mesh points (test case for freestream preservation) */
   void perturb(solution *FlowSol);
 
@@ -150,7 +153,7 @@ private:
 
   unsigned long LinSolIters;
   int failedIts;
-  double min_vol, min_length, solver_tolerance;
+  double min_vol, min_length, solver_tolerance,Ay,Fy,r_max,r_min;
   double time, rk_time;
   int rk_step;
 

@@ -103,7 +103,11 @@ void mesh::setup(struct solution *in_FlowSol,array<double> &in_xv,array<int> &in
   n_eles = FlowSol->num_eles;
   n_verts = FlowSol->num_verts;
   n_cells_global = FlowSol->num_cells_global;
-
+  Ay = run_input.Ay;
+  Fy = run_input.Fy;
+  
+  r_min = run_input.r_min;
+  r_max = run_input.r_max;
   // Setup for 4th-order backward difference
   xv.setup(5);
   xv(0) = in_xv;
@@ -164,18 +168,24 @@ void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
   iter = _iter;
   rk_step = in_rk_step;
   time = FlowSol->time;
-  rk_time = time; //+run_input.dt*RK_c(rk_step);
+  rk_time = time + run_input.dt*RK_c(rk_step);
   run_input.rk_time = rk_time;
 
-  if (run_input.motion == 1) {
+  switch(run_input.motion){
+  case 1:
     deform(FlowSol);
-  }else if (run_input.motion == 2) {
+    break;
+  case 2:
     rigid_move(FlowSol);
-  }else if (run_input.motion == 3) {
+    break;
+  case 3:
+    blend_move(FlowSol);
+    break;
+  case 4:
     perturb(FlowSol);
-  }else{
-    // Do Nothing
+    break;
   }
+
 }
 
 void mesh::deform(struct solution* FlowSol) {
@@ -338,8 +348,14 @@ void mesh::set_min_length(void)
 
 void mesh::set_grid_velocity(solution* FlowSol, double dt)
 {
-
-  if (run_input.motion == 3) {
+  if (run_input.motion == 4) {
+    /// Analytic solution for perturb test-case
+    for (int i=0; i<n_verts; i++) {
+      vel_new(i,0) = 0.0; 
+      vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
+    }
+  }
+  else if (run_input.motion == 3) {
     /// Analytic solution for perturb test-case
     for (int i=0; i<n_verts; i++) {
       vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10); // from Kui
@@ -349,8 +365,8 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   else if (run_input.motion == 2) {
     for (int i=0; i<n_verts; i++) {
       for (int j=0; j<n_dims; j++) {
-        vel_new(i,j) = run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*rk_time);
-        vel_new(i,j)+= run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*rk_time);
+        vel_new(i,0) = 0.0; // from Kui
+        vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
       }
     }
   }
@@ -366,25 +382,11 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
     }
   }
 
-  // Apply velocity to the eles classes at the shape points
-  int local_ic;
-  array<double> vel(n_dims);
-  for (int ic=0; ic<n_eles; ic++) {
-    for (int j=0; j<c2n_v(ic); j++) {
-      for (int idim=0; idim<n_dims; idim++) {
-        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
-      }
-      local_ic = ic2loc_c(ic);
-      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
-    }
-  }
 
-  // Interpolate grid vel @ spts to fpts & upts
-  for (int i=0; i<FlowSol->n_ele_types; i++) {
-    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
-    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
-  }
 }
+
+
+
 
 /*! set individual-element stiffness matrix for a triangle */
 bool mesh::set_2D_StiffMat_ele_tri(array<double> &stiffMat_ele, int ele_id)
@@ -1291,11 +1293,27 @@ void mesh::update(solution* FlowSol)
   // Update grid velocity & transfer to upts, fpts
   //if (FlowSol->rank==0) cout << "Deform: updating grid velocity" << endl;
 
-  set_grid_velocity(FlowSol,run_input.dt);
-
+  //set_grid_velocity(FlowSol,run_input.dt);
+  // Apply velocity to the eles classes at the shape points
+  int local_ic;
+  array<double> vel(n_dims);
+  for (int ic=0; ic<n_eles; ic++) {
+    for (int j=0; j<c2n_v(ic); j++) {
+      for (int idim=0; idim<n_dims; idim++) {
+        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
+      }
+      local_ic = ic2loc_c(ic);
+      FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
+    }
+  }
   // Update element shape points
   //if (FlowSol->rank==0) cout << "Deform: updating element shape points" << endl;
 
+    // Interpolate grid vel @ spts to fpts & upts
+  for (int i=0; i<FlowSol->n_ele_types; i++) {
+    FlowSol->mesh_eles(i)->set_grid_vel_fpts(rk_step);
+    FlowSol->mesh_eles(i)->set_grid_vel_upts(rk_step);
+  }
   int ele_type, local_id;
   array<double> pos(n_dims);
 
@@ -1678,8 +1696,11 @@ void mesh::rigid_move(solution* FlowSol) {
   for (int i=0; i<n_verts; i++) {
     // Useful for simple cases / debugging
     for (int j=0; j<n_dims; j++) {
-      xv(0)(i,j) = xv(0)(i,j) + run_input.bound_vel_simple(0)(2*j  )*run_input.bound_vel_simple(0)(6+j)*sin(run_input.bound_vel_simple(0)(6+j)*time);
-      xv(0)(i,j)+=              run_input.bound_vel_simple(0)(2*j+1)*run_input.bound_vel_simple(0)(6+j)*cos(run_input.bound_vel_simple(0)(6+j)*time);
+      xv(0)(i,0) = xv_0(i,0);
+      xv(0)(i,1) = xv_0(i,1) + Ay*sin(2*pi*Fy*rk_time);
+
+      vel_new(i,0) = 0.0; // from Kui
+      vel_new(i,1) = 2*Fy*pi*Ay*cos(2*pi*Fy*rk_time);
     }
   }
 
@@ -1726,4 +1747,53 @@ void mesh::perturb(solution* FlowSol)
     FlowSol->mesh_eles(i)->set_transforms_dynamic();
   }
 #endif
+}
+
+void mesh::blend_move(solution* FlowSol)
+{
+  double y_o, r_v, r;
+  double c_deform = 0.;
+  //r_min = 0.6;
+  //r_max = 3.;
+  //r_min = run_input.r_min ,r_max = run_input.r_max;
+  if (rk_step==0) {
+    // Push back previous time-advance level
+    for (int i=4; i>0; i--) {
+      for (int j=0; j<xv(i).get_dim(0); j++) {
+        for (int k=0; k<n_dims; k++) {
+          xv(i)(j,k) = xv(i-1)(j,k);
+        }
+      }
+    }
+  }
+
+  for (int i=0; i<n_verts; i++) {
+
+    y_o= Ay*sin(2*pi*Fy*FlowSol->time);
+    r_v=sqrt(pow(xv(1)(i,0),2)+pow(xv(1)(i,1)-y_o,2));
+    r = (r_v-r_min)/r_max;
+    if(r < 0)
+      c_deform = 0;
+    else if(r > 1){
+      c_deform = 1;
+    }else
+      c_deform=10.*pow(r,3)-15.*pow(r,4)+6.*pow(r,5);
+
+    xv(0)(i,0) = xv_0(i,0);
+    xv(0)(i,1) = xv_0(i,1) + (1-c_deform)*Ay*sin(2*pi*Fy*rk_time);
+
+    vel_new(i,0) = 0.0; // from Kui
+    vel_new(i,1) =(1-c_deform)*2*Fy*pi*Ay*cos(2*pi*Fy*rk_time);
+
+  }
+  update(FlowSol);
+
+#ifdef _GPU
+  for (int i=0;i<FlowSol->n_ele_types;i++) {
+    FlowSol->mesh_eles(i)->rigid_move(rk_time);
+    FlowSol->mesh_eles(i)->rigid_grid_velocity(rk_time);
+    FlowSol->mesh_eles(i)->set_transforms_dynamic();
+  }
+#endif
+
 }

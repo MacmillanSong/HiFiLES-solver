@@ -47,6 +47,17 @@ dy_cyclic
 200000000.0
 dz_cyclic
 200000000.0
+----------------------------------
+Mesh Deformation Options
+----------------------------------
+motion_flag  0                    // 0: Static Mesh, 1: Moving/Deforming Mesh (FEA), 2: Rigid Movement, 3: Perturbations 5: blend
+GCL_flag     1                    // 0: No GCL  1: Solve GCL
+
+// n_moving_bnds, <boundary name(s)>  (for linear-elasticity deformation)
+//moving_boundaries  1 Isotherm_Fix 1 0 2 0 0 0 2 0 0	 
+n_deform_iters         1              // number of steps to perform during each deform process
+mesh_output_freq       20         // Frequency to output mesh to file (-1: use plot_freq)
+mesh_output_format     1          // 0: Gambit, 1: Gmsh (but, Gambit not working yet)
 -----------------------------------
 Monitoring, plotting parameters
 -----------------------------------

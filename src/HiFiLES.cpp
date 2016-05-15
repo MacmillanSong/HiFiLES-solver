@@ -87,10 +87,8 @@ int main(int argc, char *argv[]) {
   /////////////////////////////////////////////////
   
   /*! Read the config file and store the information in run_input. */
-  
-  run_input_file.open(argv[1], ifstream::in);
-  if (!run_input_file) FatalError("Unable to open input file");
-  run_input.setup(run_input_file, rank);
+
+  run_input.setup(argv[1], rank);
   
   /*! Set the input values in the FlowSol structure. */
   
@@ -251,14 +249,14 @@ int main(int argc, char *argv[]) {
   
   /*! Close convergence history file. */
   
-  if (rank == 0)
+  if (rank == 0) {
     write_hist.close();
   
   /*! Compute execution time. */
   
   final_time = clock()-init_time;
   printf("Execution time= %f s\n", (double) final_time/((double) CLOCKS_PER_SEC));
-  
+    }
   /*! Finalize MPI. */
   
 #ifdef _MPI

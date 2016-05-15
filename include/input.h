@@ -27,6 +27,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <map>
 #include "array.h"
 
 class input
@@ -52,7 +54,14 @@ public:
   void set_c(double in_c_tri, double in_c_quad);
   void set_dt(double in_dt);
 
-  void setup(ifstream& in_run_input_file, int rank);
+  /*! Load input file & prepare all simulation parameters */
+  void setup(char *fileNameC, int rank);
+
+  /*! Read in parameters from file */
+  void read_input_file(string fileName, int rank);
+
+  /*! Apply non-dimensionalization and do misc. error checks */
+  void setup_params(int rank);
 
   // #### members ####
 
@@ -89,6 +98,7 @@ public:
   double CFL;
   int n_steps;
   int plot_freq;
+  string data_file_name;
   int restart_dump_freq;
   int adv_type;
 
@@ -120,6 +130,7 @@ public:
   int n_deform_iters;
   int mesh_output_freq;
   int mesh_output_format;
+  double Ay,Fy,r_min,r_max;
   array<string> boundary_flags;
   array<array<double> > bound_vel_simple;
   array<int> motion_type;
@@ -264,4 +275,67 @@ public:
   int perturb_ic;
 
   double time, rk_time;
+};
+
+/*! \class fileReader
+ *  \brief Simple, robust method for reading input files
+ *  \author Jacob Crabill
+ *  \date 4/30/2015
+ */
+class fileReader
+{
+public:
+  /*! Default constructor */
+  fileReader();
+
+  fileReader(string fileName);
+
+  /*! Default destructor */
+  ~fileReader();
+
+  /*! Set the file to be read from */
+  void setFile(string fileName);
+
+  /*! Open the file to prepare for reading simulation parameters */
+  void openFile(void);
+
+  /*! Close the file & clean up */
+  void closeFile(void);
+
+  /* === Functions to read paramters from input file === */
+
+  /*! Read a single value from the input file; if not found, apply a default value */
+  template <typename T>
+  void getScalarValue(string optName, T &opt, T defaultVal);
+
+  /*! Read a single value from the input file; if not found, throw an error and exit */
+  template <typename T>
+  void getScalarValue(string optName, T &opt);
+
+  /*! Read a vector of values from the input file; if not found, apply the default value to all elements */
+  template <typename T>
+  void getVectorValue(string optName, vector<T> &opt, T defaultVal);
+
+  /*! Read a vector of values from the input file; if not found, throw an error and exit */
+  template <typename T>
+  void getVectorValue(string optName, vector<T> &opt);
+
+  template <typename T>
+  void getVectorValue(string optName, array<T> &opt);
+
+  /*! Read a vector of values from the input file; if not found, setup vector to size 0 and continue */
+  template <typename T>
+  void getVectorValueOptional(string optName, vector<T> &opt);
+
+  template <typename T>
+  void getVectorValueOptional(string optName, array<T> &opt);
+
+  /*! Read in a map of type <T,U> from input file; each entry prefaced by optName */
+  template <typename T, typename U>
+  void getMap(string optName, map<T, U> &opt);
+
+private:
+  ifstream optFile;
+  string fileName;
+
 };

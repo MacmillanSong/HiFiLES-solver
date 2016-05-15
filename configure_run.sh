@@ -32,7 +32,7 @@ CODE="RELEASE"            # DEBUG or RELEASE
 BLAS="ATLAS"               # ATLAS, STANDARD, ACCLERATE, or NO
 PARALLEL="YES"           # YES or NO
 TECIO="NO"              # YES or NO
-METIS="YES"              # Build & link to the HiFiLES-supplied ParMETIS libraries? YES or NO
+METIS="NO"              # Build & link to the HiFiLES-supplied ParMETIS libraries? YES or NO
 # ---------------------------------------------------------------
 # Compiler Selections [Change compilers or add full filepaths if needed]
 CXX="g++"               # C++ compiler - Typically g++ (default, GNU) or icpc (Intel)
@@ -40,14 +40,16 @@ NVCC="nvcc"             # NVidia CUDA compiler
 MPICC="mpicxx"          # MPI C compiler
 # ---------------------------------------------------------------
 # Library & Header File Locations [Change filepaths as needed]
-BLAS_LIB="/usr/local/atlas/lib"
-BLAS_INCLUDE="/usr/local/atlas/include"
+BLAS_LIB="/usr/lib"
+BLAS_INCLUDE="/usr/include"
 
-TECIO_LIB="lib/tecio-2008/lib"
-TECIO_INCLUDE="lib/tecio-2008/include"
+TECIO_LIB="/usr/local/tecplot360ex/bin"
+TECIO_INCLUDE="/usr/local/tecplot360ex/include"
+#TECIO_LIB="lib/tecio-2008"
+#TECIO_INCLUDE="lib/tecio-2008/include"
 
 # If building the supplied ParMETIS libraries, need the MPI header location
-MPI_INCLUDE="/usr/include/mpich2"       # location of mpi.h
+MPI_INCLUDE="/usr/include/openmpi"       # location of mpi.h
 
 # If NOT building the supplied ParMetis library, location of installed libraries
 PARMETIS_LIB="/usr/local/lib"           # location of libparmetis.a
@@ -63,6 +65,7 @@ METIS_INCLUDE="/usr/local/include"      # location of metis.h
 #   compute_13	 + double precision floating point support
 #   compute_20	 + Fermi support
 #   compute_30	 + Kepler support
+
 CUDA_ARCH="20"
 CUDA_LIB="/usr/local/cuda-5.0/lib64"
 CUDA_INCLUDE="/usr/local/cuda-5.0/include"
