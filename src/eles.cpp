@@ -6121,7 +6121,7 @@ array<double> eles::compute_error(int in_norm_type, double& time)
   array<double> grad_disu_cubpt(n_fields,n_dims);
   double detjac;
   array<double> pos(n_dims);
-  
+  array<double> loc(n_dims);
   array<double> error(2,n_fields);  //storage
   array<double> error_sum(2,n_fields);  //output
   
@@ -6147,6 +6147,15 @@ array<double> eles::compute_error(int in_norm_type, double& time)
           disu_cubpt(m) += opp_volume_cubpts(j,k)*disu_upts(0)(k,i,m);
         }
       }
+	  //find plot points
+	  for(int k=0;k<n_dims;k++)
+      {
+		  loc(k)=loc_ppts(k,j);
+      }
+      
+      // calculate position of plot point
+      
+      calc_pos(loc,i,pos);
       
       // Get the gradient at cubature point
       if (viscous==1)

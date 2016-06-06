@@ -24,7 +24,7 @@ CFL
 n_steps
 10000
 adv_type                          // 0: Forward Euler, 3: RK45
-0
+3
 tau 
 1.0
 pen_fact 
@@ -53,7 +53,7 @@ dz_cyclic
 Mesh Deformation Options
 ----------------------------------
 motion_flag                       // 0: Static Mesh, 1: Moving/Deforming Mesh (FEA), 2: Rigid Movement, 3: Sin/Cos Perturbations (For Testing)
-3
+0
 GCL_flag                          // 0: No GCL  1: Solve GCL
 0
 moving_boundaries                 // n_moving_bnds, <boundary name(s)>  (for linear-elasticity deformation)
@@ -70,19 +70,19 @@ mesh_output_format                 // 0: Gambit, 1: Gmsh (but, Gambit not workin
 Monitoring, plotting parameters
 -----------------------------------
 p_res                             // Plotting resolution, number of nodes per direction
-4
+10
 write_type                        // 0: Paraview, 1: Tecplot
-0
+1
 inters_cub_order                  // Order of cubature rule for integrating over element interfaces
-4
+8
 volume_cub_order                  // Order of cubature rule for integrating over element volumes
-4
+8
 plot_freq
 500
 restart_dump_freq
 5000000
 monitor_res_freq
-100
+10
 res_norm_type                     // 1:L1 norm, 2:L2 norm, 0:infinity norm <not implemented>
 2
 error_norm_type                   // 1:L1 norm, 2:L2 norm, 0:infinity norm <not implemented>

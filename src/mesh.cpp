@@ -346,44 +346,44 @@ void mesh::set_min_length(void)
   min_length = sqrt(min_length2);
 }
 
-void mesh::set_grid_velocity(solution* FlowSol, double dt)
-{
-  if (run_input.motion == 4) {
-    /// Analytic solution for perturb test-case
-    for (int i=0; i<n_verts; i++) {
-      vel_new(i,0) = 0.0; 
-      vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
-    }
-  }
-  else if (run_input.motion == 3) {
-    /// Analytic solution for perturb test-case
-    for (int i=0; i<n_verts; i++) {
-      vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10); // from Kui
-      vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
-    }
-  }
-  else if (run_input.motion == 2) {
-    for (int i=0; i<n_verts; i++) {
-      for (int j=0; j<n_dims; j++) {
-        vel_new(i,0) = 0.0; // from Kui
-        vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
-      }
-    }
-  }
-  else
-  {
-    /// calculate velocity using backward difference formula
-    for (int i=0; i<n_verts; i++) {
-      for (int j=0; j<n_dims; j++) {
-        //vel_new(i,j) = (xv(0)(i,j) - xv(1)(i,j))/dt;  // using simple backward-Euler
-        vel_new(i,j) = 25/12*xv(0)(i,j) - 4*xv(1)(i,j) + 3*xv(2)(i,j) - 4/3*xv(3)(i,j) + 1/4*xv(4)(i,j); // 4th-order backward difference
-        vel_new(i,j) /= run_input.dt;
-      }
-    }
-  }
+//void mesh::set_grid_velocity(solution* FlowSol, double dt)
+//{
+//  if (run_input.motion == 4) {
+//    /// Analytic solution for perturb test-case
+//    for (int i=0; i<n_verts; i++) {
+//      vel_new(i,0) = 0.0; 
+//      vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
+//    }
+//  }
+//  else if (run_input.motion == 3) {
+//   
+//    for (int i=0; i<n_verts; i++) {
+//      vel_new(i,0) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10); // from Kui
+//      vel_new(i,1) = 4*pi/10*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
+//    }
+//  }
+//  else if (run_input.motion == 2) {
+//    for (int i=0; i<n_verts; i++) {
+//      for (int j=0; j<n_dims; j++) {
+//        vel_new(i,0) = 0.0; // from Kui
+//        vel_new(i,1) = 0.4*pi*0.11*cos(2*pi*0.11*rk_time);
+//      }
+//    }
+//  }
+//  else
+//  {
+//    /// calculate velocity using backward difference formula
+//    for (int i=0; i<n_verts; i++) {
+//      for (int j=0; j<n_dims; j++) {
+//        //vel_new(i,j) = (xv(0)(i,j) - xv(1)(i,j))/dt;  // using simple backward-Euler
+//        vel_new(i,j) = 25/12*xv(0)(i,j) - 4*xv(1)(i,j) + 3*xv(2)(i,j) - 4/3*xv(3)(i,j) + 1/4*xv(4)(i,j); // 4th-order backward difference
+//        vel_new(i,j) /= run_input.dt;
+//      }
+//    }
+//  }
 
 
-}
+//}
 
 
 
@@ -1734,6 +1734,9 @@ void mesh::perturb(solution* FlowSol)
     /// Taken from Kui, AIAA-2010-5031-661
     xv(0)(i,0) = xv_0(i,0) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*rk_time/10);
     xv(0)(i,1) = xv_0(i,1) + 2*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*sin(2*pi*rk_time/10);
+	
+	vel_new(i,0) = 2./5*pi*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
+    vel_new(i,1) =2./5*pi*sin(pi*xv_0(i,0)/10)*sin(pi*xv_0(i,1)/10)*cos(2*pi*rk_time/10);
   }
 
   update(FlowSol);
