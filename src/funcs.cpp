@@ -1602,47 +1602,46 @@ int index_locate_int(int value, int* array, int size)
 
 void eval_isentropic_vortex(array<double>& pos, double time, double& rho, double& vx, double& vy, double& vz, double& p, int n_dims)
 {
-  //array<double> relative_pos(n_dims);
+  array<double> relative_pos(n_dims);
 
-	double gamma=1.4;
-  
-  //double ev_x_pos_ic;
-  //double ev_y_pos_ic;
-  //double ev_mach_ic;
-  //double ev_eps_ic;
-  //double ev_theta_ic;
-  //double ev_rho_inf_ic;
-  //double ev_magv_inf_ic;
-  //double ev_rad_ic;
-  //double ev_p_inf_ic;
+  double gamma=1.4;
+  /*
+                double ev_x_pos_ic;
+                double ev_y_pos_ic;
+                double ev_mach_ic;
+                double ev_eps_ic;
+                double ev_theta_ic;
+                double ev_rho_inf_ic;
+                double ev_magv_inf_ic;
+                double ev_rad_ic;
+                double ev_p_inf_ic;
 
-  //double f;
-  
-  //ev_x_pos_ic=0.0;
-  //ev_y_pos_ic=0.0;
-  //ev_mach_ic=0.3;  //Ma_{\infty}
-  //ev_eps_ic=5.0;   //
-  //ev_theta_ic= atan(0.5);  //\theta
-  //ev_rho_inf_ic=1.0;   //rho_{\infty}
-  //ev_magv_inf_ic=1.0;  //\U_{\infty}
-  //ev_rad_ic=1;    //R
-  //ev_p_inf_ic=1.0/(gamma*ev_mach_ic*ev_mach_ic);   //p_{\infty}=1/\gamma*Ma__{\infty}^2
+                double f;
+        */
 
-  //relative_pos(0) = pos(0) - ev_magv_inf_ic*cos(ev_theta_ic)*time;
-  //relative_pos(1) = pos(1) - ev_magv_inf_ic*sin(ev_theta_ic)*time;
+  /*
+                ev_x_pos_ic=0.0;
+                ev_y_pos_ic=0.0;
+                ev_mach_ic=0.4;
+                ev_eps_ic=5.0;
+                ev_theta_ic=pi/2.0;
+                ev_rho_inf_ic=1.0;
+                ev_magv_inf_ic=1.0;
+                ev_rad_ic=1;
+                ev_p_inf_ic=1.0/(gamma*ev_mach_ic*ev_mach_ic);
+                ev_p_inf_ic=1.0/(gamma*ev_mach_ic*ev_mach_ic);
 
-  //f= -(relative_pos(0)*relative_pos(0) + relative_pos(1)*relative_pos(1))/(ev_rad_ic*ev_rad_ic);
+        relative_pos(0) = pos(0) - ev_magv_inf_ic*cos(ev_theta_ic)*time;
+        relative_pos(1) = pos(1) - ev_magv_inf_ic*sin(ev_theta_ic)*time;
 
-  //rho=ev_rho_inf_ic*pow(1.0-((ev_eps_ic*ev_eps_ic*(gamma-1.0)*ev_mach_ic*ev_mach_ic)/2*exp(f)),1.0/(gamma-1.0));
-  
-  //vx=ev_magv_inf_ic*(cos(ev_theta_ic) - ev_eps_ic*relative_pos(1)/ev_rad_ic*exp(f/2.0));
-  
-  //vy=ev_magv_inf_ic*(sin(ev_theta_ic) + ev_eps_ic*relative_pos(0)/ev_rad_ic*exp(f/2.0));
-  
-  //vz=0.0;
-  
-  //p=ev_p_inf_ic*pow(1.0-((ev_eps_ic*ev_eps_ic*(gamma-1.0)*ev_mach_ic*ev_mach_ic)/2*exp(f)),gamma/(gamma-1.0));
-  
+                f=(1.0-((relative_pos(0)-ev_x_pos_ic)*(relative_pos(0)-ev_x_pos_ic))-((relative_pos(1)-ev_y_pos_ic)*(relative_pos(1)-ev_y_pos_ic)))/(ev_rad_ic*ev_rad_ic);
+
+                rho=ev_rho_inf_ic*pow((1.0-(((ev_eps_ic*ev_eps_ic*(gamma-1.0)*ev_mach_ic*ev_mach_ic)/(8.0*pi*pi))*exp(f))),1.0/(gamma-1.0));
+                vx=ev_magv_inf_ic*(cos(ev_theta_ic)-(((ev_eps_ic*(relative_pos(1)-ev_y_pos_ic))/(2.0*pi*ev_rad_ic))*exp(f/2.0)));
+                vy=ev_magv_inf_ic*(sin(ev_theta_ic)+(((ev_eps_ic*(relative_pos(0)-ev_x_pos_ic))/(2.0*pi*ev_rad_ic))*exp(f/2.0)));
+                vz=0.0;
+                p=ev_p_inf_ic*pow((1.0-(((ev_eps_ic*ev_eps_ic*(gamma-1.0)*ev_mach_ic*ev_mach_ic)/(8.0*pi*pi))*exp(f))),gamma/(gamma-1.0));
+        */
 
   double ev_eps_ic= 5.0;
 
@@ -1650,16 +1649,13 @@ void eval_isentropic_vortex(array<double>& pos, double time, double& rho, double
   double x = pos(0) - time;
   double y = pos(1) - time;
 
-  
-  
   double f=1.0-(x*x+y*y);
 
-  rho=pow(1.0 -ev_eps_ic*ev_eps_ic*(gamma-1.0)/(8.0*gamma*pi*pi)*exp(f),1.0/(gamma-1.0));
+  rho=pow(1.0-ev_eps_ic*ev_eps_ic*(gamma-1.0)/(8.0*gamma*pi*pi)*exp(f),1.0/(gamma-1.0));
   vx=1.-ev_eps_ic*y/(2.0*pi)*exp(f/2.0);
   vy=1.+ev_eps_ic*x/(2.0*pi)*exp(f/2.0);
   p = pow(rho,gamma);
 
-  
 }
 
 

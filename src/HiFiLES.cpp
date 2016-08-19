@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   int i_steps = 0;                    /*!< Iteration index */
   int RKSteps;                        /*!< Number of RK steps */
   ifstream run_input_file;            /*!< Config input file */
-  clock_t init_time, final_time;      /*!< To control the time */
+  clock_t init_time, final_time;                /*!< To control the time */
   struct solution FlowSol;            /*!< Main structure with the flow solution and geometry */
   ofstream write_hist;                /*!< Output files (forces, statistics, and history) */
   mesh Mesh;                          /*!< Store mesh details & perform mesh motion */
@@ -221,9 +221,7 @@ int main(int argc, char *argv[]) {
       CalcNormResidual(&FlowSol);
       
       /*! Output the history file. */
-	  if(run_input.ic_form == 0)
-		compute_error(FlowSol.ini_iter+i_steps,&FlowSol);
-	  
+      
       HistoryOutput(FlowSol.ini_iter+i_steps, init_time, &write_hist, &FlowSol);
       
       if (FlowSol.rank == 0) cout << endl;
