@@ -456,7 +456,6 @@ void mpi_inters::receive_sgsf_fpts()
 // calculate normal transformed continuous inviscid flux at the flux points at mpi faces
 void mpi_inters::calculate_common_invFlux(void)
 {
-
 #ifdef _CPU
   array<double> norm(n_dims), fn(n_fields);
   array<double> u_c(n_fields);
@@ -473,23 +472,23 @@ void mpi_inters::calculate_common_invFlux(void)
           }
 
           if (motion) {
-            // Transform solution to dynamic space
-            for (int k=0; k<n_fields; k++) {
-              temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-              temp_u_r(k) /= (*J_dyn_fpts_l(j,i));
-            }
-            // Get mesh velocity
-            for (int k=0; k<n_dims; k++) {
-              temp_v(k)=(*grid_vel_fpts(j,i,k));
-            }
+			  // Transform solution to dynamic space
+			  for (int k=0; k<n_fields; k++) {
+				  temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
+				  temp_u_r(k) /= (*J_dyn_fpts_l(j,i));
+			  }
+			  // Get mesh velocity
+			  for (int k=0; k<n_dims; k++) {
+				  temp_v(k)=(*grid_vel_fpts(j,i,k));
+			  }
           }else{
-            temp_v.initialize_to_zero();
+			  temp_v.initialize_to_zero();
           }
 
           // Interface unit-normal vector
           if (motion) {
             for (int m=0;m<n_dims;m++)
-              norm(m) = *norm_dyn_fpts(j,i,m);
+             norm(m) = *norm_dyn_fpts(j,i,m);
           }else{
             for (int m=0;m<n_dims;m++)
               norm(m) = *norm_fpts(j,i,m);
@@ -566,7 +565,6 @@ void mpi_inters::calculate_common_invFlux(void)
                 }
               }
             }
-
         }
     }
 #endif
@@ -592,29 +590,46 @@ void mpi_inters::calculate_common_viscFlux(void)
         {
           // obtain discontinuous solution at flux points
 
-          for(int k=0;k<n_fields;k++)
-            {
-              temp_u_l(k)=(*disu_fpts_l(j,i,k));
-              temp_u_r(k)=(*disu_fpts_r(j,i,k));
-            }
+          //for(int k=0;k<n_fields;k++)
+          //  {
+          //    temp_u_l(k)=(*disu_fpts_l(j,i,k));
+          //    temp_u_r(k)=(*disu_fpts_r(j,i,k));
+          //  }
 
-          if (motion) {
-            // Transform solution to dynamic space
-            for (int k=0; k<n_fields; k++) {
-              temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
-              temp_u_r(k) /= (*J_dyn_fpts_r(j,i));
-            }
-          }
-
+          //if (motion) {
+          //  // Transform solution to dynamic space
+          //  for (int k=0; k<n_fields; k++) {
+          //    temp_u_l(k) /= (*J_dyn_fpts_l(j,i));
+          //    temp_u_r(k) /= (*J_dyn_fpts_l(j,i));
+          //  }
+          //}
+		  if (motion) {
+			  // Transform to dynamic-physical domain
+			  for(int k=0;k<n_fields;k++)
+			  {
+				  temp_u_l(k)=(*disu_fpts_l(j,i,k))/(*J_dyn_fpts_l(j,i));
+				  temp_u_r(k)=(*disu_fpts_r(j,i,k))/(*J_dyn_fpts_l(j,i));
+			  }
+		  }
+		  else
+		  {
+			  for(int k=0;k<n_fields;k++)
+			  {
+				  temp_u_l(k)=(*disu_fpts_l(j,i,k));
+				  temp_u_r(k)=(*disu_fpts_r(j,i,k));
+			  }
+		  }
+		  
+		  
           // Interface unit-normal vector
           if (motion) {
             for (int m=0;m<n_dims;m++)
-              norm(m) = *norm_dyn_fpts(j,i,m);
+                norm(m) = *norm_dyn_fpts(j,i,m);
           }else{
             for (int m=0;m<n_dims;m++)
               norm(m) = *norm_fpts(j,i,m);
           }
-
+	      //cout<<"test1.4"<<endl;
           // obtain physical gradient of discontinuous solution at flux points
 
           for(int k=0;k<n_dims;k++)
@@ -625,7 +640,7 @@ void mpi_inters::calculate_common_viscFlux(void)
                   temp_grad_u_r(l,k) = *grad_disu_fpts_r(j,i,l,k);
                 }
             }
-
+		  //cout<<"test1.5"<<endl;
           // calculate flux from discontinuous solution at flux points
 
           if(n_dims==2)
@@ -655,7 +670,7 @@ void mpi_inters::calculate_common_viscFlux(void)
               }
             }
           }
-
+	      //cout<<"test1.6"<<endl;
           // Calling viscous riemann solver
           if (run_input.vis_riemann_solve_type==0)
             ldg_flux(0,temp_u_l,temp_u_r,temp_f_l,temp_f_r,norm,fn,n_dims,n_fields,run_input.tau,run_input.pen_fact);
@@ -666,8 +681,9 @@ void mpi_inters::calculate_common_viscFlux(void)
           if (motion)
           {
             for(int k=0; k<n_fields; k++) {
-              (*norm_tconf_fpts_l(j,i,k)) += fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
+               (*norm_tconf_fpts_l(j,i,k)) += fn(k)*(*ndA_dyn_fpts_l(j,i))*(*tdA_fpts_l(j,i));
             }
+    		//cout<<"test1.7"<<endl;
           }
           else
           {
@@ -675,6 +691,7 @@ void mpi_inters::calculate_common_viscFlux(void)
             for(int k=0;k<n_fields;k++) {
               (*norm_tconf_fpts_l(j,i,k)) += fn(k)*(*tdA_fpts_l(j,i));
             }
+	
           }
         }
     }

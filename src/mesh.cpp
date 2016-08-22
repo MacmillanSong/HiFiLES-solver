@@ -164,7 +164,7 @@ void mesh::move(int _iter, int in_rk_step, solution *FlowSol) {
   iter = _iter;
   rk_step = in_rk_step;
   time = FlowSol->time;
-  rk_time = time; //+run_input.dt*RK_c(rk_step);
+  rk_time = time ;//+ run_input.dt*RK_c(rk_step);
   run_input.rk_time = rk_time;
 
   if (run_input.motion == 1) {
@@ -372,8 +372,10 @@ void mesh::set_grid_velocity(solution* FlowSol, double dt)
   for (int ic=0; ic<n_eles; ic++) {
     for (int j=0; j<c2n_v(ic); j++) {
       for (int idim=0; idim<n_dims; idim++) {
-        vel(idim) = vel_new(iv2ivg(c2v(ic,j)),idim);
+        vel(idim) = vel_new((c2v(ic,j)),idim);
       }
+      //printf("iv2ivg = %d\n",iv2ivg(c2v(ic,j)));
+      //printf("ic= %d, vert_ind= %d, velocity = (%f,%f)\n",ic,j,vel(0),vel(1));
       local_ic = ic2loc_c(ic);
       FlowSol->mesh_eles(ctype(ic))->set_grid_vel_spt(local_ic,j,vel);
     }
