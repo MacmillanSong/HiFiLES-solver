@@ -32,7 +32,7 @@ using namespace std;
 input run_input;
 const double pi=4*atan(1);
 
-const char* HIFILES_DIR ="/home/yu/HiFiLES-solver";// getenv("HIFILES_HOME");
+const char* HIFILES_DIR = getenv("HIFILES_HOME");
 
 /*! Routine to multiply matrices similar to BLAS's dgemm */
 int dgemm(int Arows, int Bcols, int Acols, double alpha, double beta, double* a, double* b, double* c)

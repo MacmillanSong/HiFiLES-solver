@@ -181,7 +181,7 @@ CUDA_LIBS =
 CXX = mpicxx
 CXXCPP = mpicxx -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -O3 -D_MPI
+CXXFLAGS = -g -O0 -D_MPI
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"HiFiLES\" -DPACKAGE_TARNAME=\"HiFiLES\" -DPACKAGE_VERSION=\"0.1\" -DPACKAGE_STRING=\"HiFiLES\ 0.1\" -DPACKAGE_BUGREPORT=\"HiFiLES-dev@lists.stanford.edu\" -DPACKAGE_URL=\"http://hifiles.stanford.edu\" -DPACKAGE=\"HiFiLES\" -DVERSION=\"0.1\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
 DEPDIR = .deps
@@ -327,7 +327,7 @@ AM_CPPFLAGS = -I../include/
 # BLAS
 
 # MPI
-___bin_HiFiLES_CXXFLAGS = -O3 -D_MPI -DNO_METIS  \
+___bin_HiFiLES_CXXFLAGS = -g -O0 -D_MPI -DNO_METIS  \
 	-I/usr/local/include -I/usr/local/include -DNO_TECIO -D_CPU -I /usr/include -D_STANDARD_BLAS -I/usr/include/openmpi \
 	$(am__empty)
 ___bin_HiFiLES_LDADD =  /usr/local/lib/libparmetis.a /usr/local/lib/libmetis.a \

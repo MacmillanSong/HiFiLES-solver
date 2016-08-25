@@ -1,0 +1,4 @@
+TITLE = "HiFiLES simulation"
+VARIABLES = "Iteration","log<sub>10</sub>(Res[<greek>r</greek>])","log<sub>10</sub>(Res[<greek>r</greek>v<sub>x</sub>])","log<sub>10</sub>(Res[<greek>r</greek>v<sub>y</sub>])","log<sub>10</sub>(Res[<greek>r</greek>E])","F<sub>x</sub>(Total)","F<sub>y</sub>(Total)","CL</sub>(Total)","CD</sub>(Total)","Time<sub>Physical</sub>","Time<sub>Comp</sub>(m)"
+ZONE T= "Convergence history"
+1, -2.17556728442426, -2.17556728442426, -2.17556728442425, -0.516194461944093, 0, 0, 0, 0, 0.001, 0.00010685

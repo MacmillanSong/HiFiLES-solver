@@ -3026,7 +3026,7 @@ fi
 if test "$code_type" == "RELEASE" ; then
   CXXFLAGS="-O3"
 else
-  CXXFLAGS="-g -O2"
+  CXXFLAGS="-g -O0"
 fi
 
 # --------------------------------------------------------------

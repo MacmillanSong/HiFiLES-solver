@@ -1331,90 +1331,116 @@ void eles::extrapolate_solution(int in_disu_upts_from)
 void eles::evaluate_invFlux(int in_disu_upts_from)
 {
   if (n_eles!=0)
-  {
-    
-#ifdef _CPU
-    
-    int i,j,k,l,m;
-    
-    for(i=0;i<n_eles;i++)
     {
-      for(j=0;j<n_upts_per_ele;j++)
-      {
-        for(k=0;k<n_fields;k++)
+
+#ifdef _CPU
+
+      int i,j,k,l,m;
+
+      for(i=0;i<n_eles;i++)
         {
-          temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+          for(j=0;j<n_upts_per_ele;j++)
+            {
+              for(k=0;k<n_fields;k++)
+                {
+                  temp_u(k)=disu_upts(in_disu_upts_from)(j,i,k);
+                }
+
+              if (motion) {
+                  // Transform solution from static frame to dynamic frame
+                  for (k=0; k<n_fields; k++) {
+                      temp_u(k) /= J_dyn_upts(j,i);
+                    }
+                  // Get mesh velocity in dynamic frame
+                  for (k=0; k<n_dims; k++) {
+                      temp_v(k) = grid_vel_upts(j,i,k);
+                    }
+                  // Temporary flux vector for dynamic->static transformation
+                  temp_f_ref.setup(n_fields,n_dims);
+                }else{
+                  temp_v.initialize_to_zero();
+                }
+
+              if(n_dims==2)
+                {
+                  calc_invf_2d(temp_u,temp_f);
+                  if (motion)
+                    calc_alef_2d(temp_u, temp_v, temp_f);
+                }
+              else if(n_dims==3)
+                {
+                  calc_invf_3d(temp_u,temp_f);
+                  if (motion)
+                    calc_alef_3d(temp_u, temp_v, temp_f);
+                }
+              else
+                {
+                  FatalError("Invalid number of dimensions!");
+                }
+
+              // Transform from dynamic-physical space to static-physical space
+              if (motion) {
+                  for(k=0; k<n_fields; k++) {
+                      for(l=0; l<n_dims; l++) {
+                          temp_f_ref(k,l)=0.;
+                          for(m=0; m<n_dims; m++) {
+                              temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
+                            }
+                        }
+                    }
+
+                  if(run_input.GCL){
+                      for(l=0; l<n_dims;l++){
+                          for(m=0;m<n_dims; m++){
+                              //temp_f_ref_GCL(l)=0;
+                              temp_f_ref_GCL(l) += -JGinv_dyn_upts(l,m,j,i)*temp_v(m);
+                            }
+                        }
+                    }
+                  // Copy Static-Physical Domain flux back to temp_f
+                  for (k=0; k<n_fields; k++) {
+                      for (l=0; l<n_dims; l++) {
+                          temp_f(k,l) = temp_f_ref(k,l);
+                        }
+                    }
+                }
+
+              //GCL
+              if(run_input.GCL){
+                  for(l=0;l<n_dims;l++)
+                    {
+                      for(m=0;m<n_dims;m++){
+                          tdisf_GCL_upts(j,i,l) += JGinv_upts(l,m,j,i)*temp_f_GCL(m);
+                        }
+                    }
+                }
+
+              // Transform from static physical space to computational space
+              for(k=0;k<n_fields;k++) {
+                  for(l=0;l<n_dims;l++) {
+                      tdisf_upts(j,i,k,l)=0.;
+                      for(m=0;m<n_dims;m++) {
+                          tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);//JGinv_upts(j,i,l,m)*temp_f(k,m);
+                        }
+                    }
+                }
+              if(run_input.GCL){
+                  for(l=0;l<n_dims;l++)
+                    {
+                      for(m=0;m<n_dims;m++){
+                          tdisf_GCL_upts(j,i,l) += JGinv_upts(l,m,j,i)*temp_f_GCL(m);
+                        }
+                    }
+                }
+            }
         }
 
-        if (motion) {
-          // Transform solution from static frame to dynamic frame
-          for (k=0; k<n_fields; k++) {
-            temp_u(k) /= J_dyn_upts(j,i);
-          }
-          // Get mesh velocity in dynamic frame
-          for (k=0; k<n_dims; k++) {
-            temp_v(k) = grid_vel_upts(j,i,k);
-          }
-          // Temporary flux vector for dynamic->static transformation
-          temp_f_ref.setup(n_fields,n_dims);
-        }else{
-          temp_v.initialize_to_zero();
-        }
-        
-        if(n_dims==2)
-        {
-          calc_invf_2d(temp_u,temp_f);
-          if (motion)
-            calc_alef_2d(temp_u, temp_v, temp_f);
-        }
-        else if(n_dims==3)
-        {
-          calc_invf_3d(temp_u,temp_f);
-          if (motion)
-            calc_alef_3d(temp_u, temp_v, temp_f);
-        }
-        else
-        {
-          FatalError("Invalid number of dimensions!");
-        }
-
-        // Transform from dynamic-physical space to static-physical space
-        if (motion) {
-          for(k=0; k<n_fields; k++) {
-            for(l=0; l<n_dims; l++) {
-              temp_f_ref(k,l)=0.;
-              for(m=0; m<n_dims; m++) {
-                temp_f_ref(k,l) += JGinv_dyn_upts(l,m,j,i)*temp_f(k,m);
-              }
-            }
-          }
-
-          // Copy Static-Physical Domain flux back to temp_f
-          for (k=0; k<n_fields; k++) {
-            for (l=0; l<n_dims; l++) {
-              temp_f(k,l) = temp_f_ref(k,l);
-            }
-          }
-        }
-        
-        // Transform from static physical space to computational space
-        for(k=0;k<n_fields;k++) {
-          for(l=0;l<n_dims;l++) {
-            tdisf_upts(j,i,k,l)=0.;
-            for(m=0;m<n_dims;m++) {
-              tdisf_upts(j,i,k,l) += JGinv_upts(l,m,j,i)*temp_f(k,m);//JGinv_upts(j,i,l,m)*temp_f(k,m);
-            }
-          }
-        }
-      }
-    }
-    
 #endif
-    
+
 #ifdef _GPU
-    evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
+      evaluate_invFlux_gpu_kernel_wrapper(n_upts_per_ele,n_dims,n_fields,n_eles,disu_upts(in_disu_upts_from).get_ptr_gpu(),tdisf_upts.get_ptr_gpu(),detjac_upts.get_ptr_gpu(),J_dyn_upts.get_ptr_gpu(),JGinv_upts.get_ptr_gpu(),JGinv_dyn_upts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu(),run_input.gamma,motion,run_input.equation,run_input.wave_speed(0),run_input.wave_speed(1),run_input.wave_speed(2),run_input.turb_model);
 #endif
-  }
+    }
 }
 
 
@@ -7239,18 +7265,18 @@ void eles::initialize_grid_vel(int in_max_n_spts_per_ele)
 void eles::set_grid_vel_fpts(int in_rk_step)
 {
   int ic,fpt,j,k;
-//  if (run_input.motion==3) {
-//    double rk_time;
-//    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
-//    for (ic=0; ic<n_eles; ic++) {
-//      for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
-//        grid_vel_fpts(fpt,ic,0) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
-//        grid_vel_fpts(fpt,ic,1) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
-//      }
-//    }
-//  }
-//  else
-//  {
+  if (run_input.motion==3) {
+    double rk_time;
+    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
+    for (ic=0; ic<n_eles; ic++) {
+      for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
+        grid_vel_fpts(fpt,ic,0) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
+        grid_vel_fpts(fpt,ic,1) = 4*pi/10*sin(pi*pos_fpts(fpt,ic,0)/10)*sin(pi*pos_fpts(fpt,ic,1)/10)*cos(2*pi*rk_time/10);
+      }
+    }
+  }
+  else
+  {
     for (ic=0; ic<n_eles; ic++) {
       for (fpt=0; fpt<n_fpts_per_ele; fpt++) {
         for(k=0;k<n_dims;k++) {
@@ -7261,7 +7287,7 @@ void eles::set_grid_vel_fpts(int in_rk_step)
         }
       }
     }
-//  }
+  }
 #ifdef _GPU
   //grid_vel_fpts.cp_cpu_gpu();
   eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_fpts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_fpts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_fpts.get_ptr_gpu());
@@ -7274,18 +7300,18 @@ void eles::set_grid_vel_fpts(int in_rk_step)
 void eles::set_grid_vel_upts(int in_rk_step)
 {
   int ic,upt,j,k;
-//  if (run_input.motion==3) {
-//    double rk_time;
-//    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
-//    for (ic=0; ic<n_eles; ic++) {
-//      for (upt=0; upt<n_upts_per_ele; upt++) {
-//        grid_vel_upts(upt,ic,0) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
-//        grid_vel_upts(upt,ic,1) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
-//      }
-//    }
-//  }
-//  else
-//  {
+  if (run_input.motion==3) {
+    double rk_time;
+    rk_time = run_input.time+RK_c(in_rk_step)*run_input.dt;
+    for (ic=0; ic<n_eles; ic++) {
+      for (upt=0; upt<n_upts_per_ele; upt++) {
+        grid_vel_upts(upt,ic,0) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
+        grid_vel_upts(upt,ic,1) = 4*pi/10*sin(pi*pos_upts(upt,ic,0)/10)*sin(pi*pos_upts(upt,ic,1)/10)*cos(2*pi*rk_time/10);
+      }
+    }
+  }
+  else
+  {
     for (ic=0; ic<n_eles; ic++) {
       for (upt=0; upt<n_upts_per_ele; upt++) {
         for(k=0;k<n_dims;k++) {
@@ -7296,7 +7322,7 @@ void eles::set_grid_vel_upts(int in_rk_step)
         }
       }
     }
-//  }
+  }
 #ifdef _GPU
   //grid_vel_upts.cp_cpu_gpu();
   eval_grid_vel_pts_kernel_wrapper(n_dims,n_eles,n_upts_per_ele,max_n_spts_per_ele,n_spts_per_ele.get_ptr_gpu(),nodal_s_basis_upts.get_ptr_gpu(),vel_spts.get_ptr_gpu(),grid_vel_upts.get_ptr_gpu());

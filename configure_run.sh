@@ -28,7 +28,7 @@ export HIFILES_HOME=$(pwd)
 # ---------------------------------------------------------------
 # Basic User-Modifiable Build Settings [Change these as desired]
 NODE="CPU"              # CPU or GPU
-CODE="RELEASE"            # DEBUG or RELEASE
+CODE="DEBUG"            # DEBUG or RELEASE
 BLAS="ATLAS"               # ATLAS, STANDARD, ACCLERATE, or NO
 PARALLEL="YES"           # YES or NO
 TECIO="NO"              # YES or NO

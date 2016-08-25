@@ -210,6 +210,8 @@ public:
   /*! get a pointer to the normal transformed continuous flux at a flux point */
   double* get_norm_tconf_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_field, int in_ele);
 
+  double *get_norm_tconf_GCL_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
+
   /*! get a pointer to the determinant of the jacobian at a flux point (static->computational) */
   double* get_detjac_fpts_ptr(int in_inter_local_fpt, int in_ele_local_inter, int in_ele);
 

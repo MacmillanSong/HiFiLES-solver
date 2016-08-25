@@ -57,6 +57,9 @@ public:
   /*! Compute common inviscid flux using Rusanov flux */
   void rusanov_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &f_l, array<double> &f_r, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
+  /*! Compute common GCL inviscid flux using Rusanov flux*/
+  void GCL_rusanov_flux(array<double> &v_g, array<double> &norm, double &fn, int n_dims);
+
   /*! Compute common inviscid flux using Roe flux */
   void roe_flux(array<double> &u_l, array<double> &u_r, array<double> &v_g, array<double> &norm, array<double> &fn, int n_dims, int n_fields, double gamma);
 
@@ -84,12 +87,12 @@ public:
 	int order;
 	int viscous;
 	int LES;
-  int wall_model;
+	int wall_model;
 	int n_inters;
 	int n_fpts_per_inter;
 	int n_fields;
 	int n_dims;
-  int motion;       //!< Mesh motion flag
+	int motion;       //!< Mesh motion flag
 	
 	array<double*> disu_fpts_l;
 	array<double*> delta_disu_fpts_l;
@@ -99,10 +102,10 @@ public:
 	array<double*> tdA_fpts_l;
 	array<double*> norm_fpts;
 	array<double*> pos_fpts;
-  array<double*> pos_dyn_fpts;
+	array<double*> pos_dyn_fpts;
 
-  array<double> pos_disu_fpts_l;
-  array<double*> grad_disu_fpts_l;
+        array<double> pos_disu_fpts_l;
+        array<double*> grad_disu_fpts_l;
   array<double*> normal_disu_fpts_l;
 
   array<double> temp_u_l;
